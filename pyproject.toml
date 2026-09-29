@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "clinical-trials-oncology-pipeline"
+version = "1.0.0"
+description = "A reproducible ClinicalTrials.gov data pipeline and dashboard for lymphoma studies"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "dbt-postgres>=1.10,<2.0",
+  "psycopg[binary]>=3.2,<4.0",
+  "python-dotenv>=1.0,<2.0",
+  "requests>=2.32,<3.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0,<10.0"]
+
+[project.scripts]
+clinical-trials-pipeline = "clinical_trials_pipeline.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

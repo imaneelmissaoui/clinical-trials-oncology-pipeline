@@ -1,0 +1,41 @@
+version: 2
+
+models:
+  - name: stg_studies
+    description: One cleaned record per NCT ID from the most recent Bronze ingestion run.
+    columns:
+      - name: nct_id
+        description: ClinicalTrials.gov study identifier; one row per study.
+        data_tests: [not_null, unique]
+      - name: brief_title
+        data_tests: [not_null]
+      - name: overall_status
+        data_tests: [not_null]
+      - name: study_type
+        data_tests: [not_null]
+      - name: start_date
+        description: Partial source dates are standardized to the first day of the reported period.
+      - name: is_imaging_related
+        description: Keyword flag based on the public record text; it is a screening signal, not a clinical classification.
+
+  - name: stg_conditions
+    description: One row per distinct study-condition pair.
+    columns:
+      - name: nct_id
+        data_tests: [not_null]
+      - name: condition_name
+        data_tests: [not_null]
+
+  - name: stg_interventions
+    description: One row per distinct study-intervention pair.
+    columns:
+      - name: nct_id
+        data_tests: [not_null]
+      - name: intervention_name
+        data_tests: [not_null]
+
+  - name: stg_locations
+    description: One row per study location with at least a reported country, city or facility; facility and city details are retained only in Silver.
+    columns:
+      - name: nct_id
+        data_tests: [not_null]

@@ -1,30 +1,37 @@
 services:
   postgres:
     image: postgres:16
-
+    container_name: clinical-trials-postgres
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-
+      POSTGRES_DB: ${POSTGRES_DB:-clinical_trials}
+      POSTGRES_USER: ${POSTGRES_USER:-clinical_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
     ports:
-      - "${POSTGRES_PORT}:5432"
-
+      - "${POSTGRES_PORT:-5433}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
+      - ./sql/001_create_bronze.sql:/docker-entrypoint-initdb.d/001_create_bronze.sql:ro
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"
-        ]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-clinical_user} -d ${POSTGRES_DB:-clinical_trials}"]
       interval: 5s
       timeout: 5s
-      retries: 10
-
+      retries: 20
     restart: unless-stopped
 
+  metabase:
+    image: metabase/metabase:latest
+    container_name: clinical-trials-metabase
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      MB_DB_FILE: /metabase-data/metabase.db
+    ports:
+      - "${METABASE_PORT:-3000}:3000"
+    volumes:
+      - metabase_data:/metabase-data
+    restart: unless-stopped
 
 volumes:
   postgres_data:
+  metabase_data:

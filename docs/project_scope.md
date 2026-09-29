@@ -1,68 +1,38 @@
-# Oncology Clinical Trials Intelligence Pipeline
+# Project scope and analytical definitions
 
-## Project Overview
+## Objective
 
-This project builds an end-to-end data engineering pipeline for collecting, storing, transforming, testing, and visualizing public oncology clinical trial data.
+Build a reproducible data pipeline around public ClinicalTrials.gov study records, with lymphoma as the default condition query. Preserve each source record, produce normalized analytical tables, validate their grain and relationships, and make the resulting study landscape explorable.
 
-The first version of the pipeline will focus on lymphoma and medical imaging-related clinical trials retrieved from the ClinicalTrials.gov API v2.
+## In scope
 
-## Project Objectives
+- ClinicalTrials.gov API v2 study search and cursor pagination.
+- A bounded run of up to 1,000 unique studies by default; the cap and page size are configurable.
+- Append-only Bronze snapshots with source payload, run ID, extraction timestamp, query and registry update date.
+- dbt Silver normalization for studies, conditions, interventions and study locations.
+- A Gold one-row-per-study fact table, dimensions and bridges for repeated values.
+- Automated source-independent Python tests and dbt data-quality tests.
+- Metabase access to the Gold warehouse and a static, interactive dashboard snapshot for the portfolio.
 
-The pipeline will:
+## Analytical definitions
 
-1. Extract clinical trial records from the ClinicalTrials.gov API.
-2. Preserve the original source data in a raw Bronze layer.
-3. Clean and standardize the data in a Silver layer.
-4. Build analytics-ready datasets in a Gold layer.
-5. Validate data quality using automated tests.
-6. Visualize clinical trial trends using a business intelligence dashboard.
-7. Support repeatable and incremental pipeline executions.
+| Indicator | Definition |
+|---|---|
+| Study count | Distinct NCT IDs in the selected snapshot; never a count of sites or interventions. |
+| Recruiting | `overallStatus = RECRUITING` in the current registry record. |
+| Country count | Distinct country labels among the locations attached to visible studies. |
+| Location count | Distinct study-location records with at least one reported country, city or facility retained in Silver. |
+| Study duration | Difference in calendar months between reported start and completion dates when both can be parsed and completion is not before start. |
+| Imaging-related | Text keyword screening for PET/PET-CT, MRI, CT, imaging/radiology and ultrasound terms. It does not establish trial purpose or measure imaging use. |
+| Has results | The source record's `hasResults` flag; it does not assess result quality or findings. |
 
-## Initial Analytical Questions
+## Out of scope
 
-The final datasets should help answer questions such as:
+- Patient-level data, eligibility matching or clinical recommendations.
+- Statistical evaluation of treatment effects or posted study results.
+- Automatic scheduling, change-data capture between API snapshots, Airflow and cloud hosting.
+- A claim that the bounded sample is a census of all lymphoma studies.
 
-* How many lymphoma trials are currently recruiting?
-* How are clinical trials distributed by phase?
-* Which countries host the most active trials?
-* Which organizations sponsor the most oncology trials?
-* What intervention types are most frequently studied?
-* How long do oncology clinical trials typically last?
-* Which trial records have not been updated recently?
-* How frequently are PET, PET/CT, MRI, and other imaging technologies used in oncology trials?
+## Refresh behavior
 
-## Initial Data Source
-
-ClinicalTrials.gov API v2.
-
-The first pipeline version will retrieve a limited and reproducible subset of lymphoma and medical imaging-related clinical trials.
-
-## Planned Technology Stack
-
-* Python for data extraction and pipeline logic
-* PostgreSQL for data storage
-* dbt for SQL transformations, testing, and documentation
-* Docker and Docker Compose for reproducible environments
-* Metabase for dashboarding
-* Git and GitHub for version control
-* GitHub Actions for continuous integration
-
-## Planned Architecture
-
-ClinicalTrials.gov API
-→ Python ingestion
-→ PostgreSQL Bronze layer
-→ dbt Silver layer
-→ dbt Gold layer
-→ Metabase dashboard
-
-## Future Improvements
-
-Potential future versions may include:
-
-* Incremental ingestion of newly created or updated trials
-* Airflow orchestration
-* Integration with an additional healthcare data source
-* Cloud deployment
-* Automated data freshness monitoring
-* More advanced data quality checks
+Each manual run follows the API page token until it reaches the configured study cap or the API has no next-page token. It appends each captured NCT ID to Bronze under a new run ID. Silver first chooses the newest completed ingestion run, then selects one captured row per NCT ID from that run. Historical payloads remain in Bronze. A future scheduled incremental design could track changed records between runs; this version does not claim to do so.

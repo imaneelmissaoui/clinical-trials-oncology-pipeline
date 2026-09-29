@@ -1,0 +1,72 @@
+version: 2
+
+models:
+  - name: fct_trials
+    description: One row per NCT study in the most recent ingestion run. Count measures describe its conditions, interventions and registered locations.
+    columns:
+      - name: nct_id
+        description: Degenerate study identifier and fact grain.
+        data_tests: [not_null, unique]
+      - name: status_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_study_status')
+                field: status_key
+      - name: phase_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_study_phase')
+                field: phase_key
+      - name: study_type_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_study_type')
+                field: study_type_key
+      - name: sponsor_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_sponsors')
+                field: sponsor_key
+      - name: location_count
+        data_tests: [not_null]
+
+  - name: dim_countries
+    columns:
+      - name: country_key
+        data_tests: [not_null, unique]
+      - name: country_name
+        data_tests: [not_null]
+
+  - name: bridge_trial_conditions
+    description: Many-to-many bridge between studies and registered conditions.
+    columns:
+      - name: nct_id
+        data_tests: [not_null]
+      - name: condition_name
+        data_tests: [not_null]
+
+  - name: bridge_trial_interventions
+    description: Many-to-many bridge between studies and registered interventions.
+    columns:
+      - name: nct_id
+        data_tests: [not_null]
+      - name: intervention_name
+        data_tests: [not_null]
+
+  - name: bridge_trial_countries
+    description: Study-country bridge with a count of registered locations in each country.
+    columns:
+      - name: nct_id
+        data_tests: [not_null]
+      - name: country_key
+        data_tests: [not_null]
+      - name: location_count
+        data_tests: [not_null]

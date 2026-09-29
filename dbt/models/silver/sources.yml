@@ -1,0 +1,24 @@
+version: 2
+
+sources:
+  - name: bronze
+    schema: bronze
+    tables:
+      - name: raw_studies
+        description: One immutable API payload per NCT ID and ingestion run.
+        columns:
+          - name: nct_id
+            description: ClinicalTrials.gov study identifier.
+          - name: source_payload
+            description: Original JSON study record stored as PostgreSQL JSONB.
+          - name: extracted_at
+            description: UTC time when the record was stored in Bronze.
+          - name: ingestion_run_id
+            description: Unique identifier for one pipeline run.
+      - name: ingestion_runs
+        description: Metadata and record counts for each API extraction and Bronze load.
+        columns:
+          - name: ingestion_run_id
+            description: Unique identifier for one pipeline run.
+          - name: completed_at
+            description: Timestamp when the API records and run metadata were committed to Bronze.
